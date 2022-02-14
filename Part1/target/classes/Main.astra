@@ -1,0 +1,28 @@
+agent Main {
+    module Console console;
+    module System system;
+
+    types lightOntology {
+        formula switch(string, string); /* this models the state of the switch  eg sw1, on */
+        formula light(string, string); /* this models the state of the light number eg l1, off */
+    }
+
+    initial switch("s1", "on"), light("l1","off");
+
+    /* Find the bad case and fix it */
+    rule +switch("s1","on") : light("l1","off") {
+        -light("l1","off");
+        +light("l1","on");
+        system.exit();
+    }
+
+    rule +light(string L, string L2) {
+        console.println("Light: " + L + " is in state: " + L2 );
+
+    }
+
+    
+
+ 
+
+}

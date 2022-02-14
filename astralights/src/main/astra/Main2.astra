@@ -1,0 +1,57 @@
+agent Main2 {
+    module Console console;
+    module System system;
+
+    types lightOntology {
+        formula switch(string); /* this models the state of the switch */
+        formula light(string); /* this models the state of the light */
+        formula transition(string, string); /* this models a state transition */
+    }
+
+    initial switch("off"), light("off");
+    initial transition("off", "on");
+    initial transition("on", "off");
+
+    rule +!main(list args) {
+        system.sleep(2000);
+        console.println("Here we go...");
+        !flip();
+        system.sleep(200);
+        !flip();
+        system.sleep(200);
+        !flip();
+        system.sleep(200);
+        !flip();
+        system.sleep(200);
+        !flip();
+        system.sleep(200);
+        !flip();
+        system.sleep(200);
+        !flip();
+        system.sleep(200);
+        !flip();
+    }
+
+    rule +!flip() : switch(string S) & transition(S, string T) {
+        -+switch(T);
+    }
+
+    /* DELIBERATION RULES */
+    rule +switch(string S) { !light(S); }
+
+
+    /* MEANS-END RULES */
+    rule +!light(string S) : transition(string T, S) & light(T) {
+        -light(T);
+        +light(S);
+        // console.println("");
+    }
+
+    rule +!light(string S) { }
+
+
+    rule +light(string S) {
+        console.println("Light is in state: " + S);
+    }
+
+}

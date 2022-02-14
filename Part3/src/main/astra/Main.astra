@@ -1,0 +1,69 @@
+agent Main {
+    module Console console;
+    module System system;
+    module Debug d;
+
+    types lightOntology {
+        formula switch(string, string); /* this models the state of the switch  eg sw1, on */
+        formula light(string, string); /* this models the state of the light number eg l1, off */
+        formula transition(string, string); /* this models a state transition */
+
+    }
+
+    initial switch("s1","off"), light("l1","off");
+    initial transition("off", "on");
+    initial transition("on", "off");
+
+    rule +!main(list args) {
+      /*  console.println("Main fliiping ...");*/
+        !flip();
+        system.sleep(1000);
+        !flip();
+        system.sleep(1000);
+        !flip();
+        system.sleep(1000);
+        !flip();
+        system.sleep(1000);
+        !flip();
+
+    }
+    /* change switch state */
+    rule +!flip() : switch("s1",string S) & transition(S, string T) {
+       /* console.println("swapping...." +S + T);*/
+        -switch("s1",S); /* remove old */
+        +switch("s1",T); /* add new */
+    }
+
+/* Deliberate and set a goal of getting that light into correct state
+    rule +switch("s1","off") { !light("l1","off"); }
+    rule +switch("s1","on") { !light("l1","on"); } 
+ or do both in one if we get s1 in state S  we make a goal to have l1 in same state*/
+   rule +switch("s1", string S) { 
+       /*console.println("Match switch to light rule " +S+ " set goal for light to match....");*/
+       !light("l1", S); 
+       }
+
+/* Means end trigger on the GOAL and fix it turn light on, if off, bringing state inline */
+    rule +!light("l1","on") : light("l1","off") {
+         /*console.println("MeansEnd1");*/
+        -light("l1","off");
+        +light("l1","on");
+    }
+    rule +!light("l1","off") : light("l1","on") {
+        /*console.println("MeansEnd2");*/
+        -light("l1","on");
+        +light("l1","off");
+    }
+    rule +!light("l1","off") : light("l1","off") {/*console.println("MeansEnd3");*/ }
+    rule +!light("l1","on") : light("l1","on") {/*console.println("MeansEnd4");*/   }
+   
+    rule +light(string L, string L2) {
+        /* d.dumpBeliefs(); */ 
+        console.println("Light: " + L + " is in state: " + L2 );  
+    }
+
+
+
+ 
+
+}

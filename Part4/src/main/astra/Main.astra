@@ -1,0 +1,80 @@
+agent Main {
+    module Console console;
+    module System system;
+    module Debug d;
+
+    types lightOntology {
+        formula switch(string, string); /* this models the state of the switch  eg sw1, on */
+        formula light(string, string); /* this models the state of the light number eg l1, off */
+        formula transition(string, string); /* this models a state transition */
+
+    }
+
+    initial switch("1","off"),switch("2","off"), light("1","off"),light("2","off");
+    initial transition("off", "on");
+   
+    rule +!main(list args) {
+
+        console.println("1 Start main loop After 2 seconds, switch s1 should be turned on...");
+        
+        system.sleep(2000);
+
+        !flip1();
+        !flip2();
+        !flip1();
+        !flip2();
+        !flip1();
+        !flip2();
+        !flip2();
+        !flip1();
+        system.sleep(2000);
+        system.exit();
+       
+        console.println("...");
+        
+    }
+
+    rule +!flip1() : switch("1",string S) & transition(S, string T) {
+         console.println("4a Goal Switch " + T + " switch 1"); 
+        -switch("1",S); 
+        +switch("1",T); 
+    }
+
+    rule +!flip2() : switch("2",string S) & transition(S, string T) {
+         console.println("4b Switch " + T + " switch 2"); 
+        -switch("2",S); 
+        +switch("2",T); 
+    } 
+
+    rule +switch(string A, string S) { 
+        console.println("2. Set Goal light  "+ A + " to state " + S + " "); 
+        !light(A, S); 
+    }
+
+    rule +!light(string A, string S) : light(A,S)  {
+        console.println("Light " + A + " already correct in state '" + S + "' matching switch, do nothing ");          
+    }
+
+
+    rule +!light(string A,string S) :  ~light(A,S) & transition(string T, S) {
+        d.dumpBeliefs();
+        console.println("Light "+ A +" in wrong state " + T + " fix the light by changing it to " + S ); 
+    
+        
+        -light(A,T); //Correct the undesirable environment
+        +light(A,S); //Correct the undesirable environment
+        console.println("call "+ A +" light to change to "+ S +"  again... ");
+        system.sleep(2000);
+        d.dumpBeliefs(); //Do I need to call another goal here, so I can trigger a partyshould moving this light to on
+        !light(A, S); //Correct the undesirable environment
+        d.dumpBeliefs();
+
+    }
+
+    rule +light(string L, string L2) {
+        console.println("Light: " + L + " is in state: " + L2 );  
+    }
+
+
+
+}

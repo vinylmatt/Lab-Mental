@@ -1,0 +1,76 @@
+agent Sequenced {
+    module Console console;
+    module Prelude prelude;
+    module System system;
+    module Debug d;
+
+    types lightOntology {
+        formula switch(string, string); /* this models the state of the switch  eg sw1, on */
+        formula light(string, string); /* this models the state of the light number eg l1, off */
+        formula transition(string, string); /* this models a state transition */
+        formula flip(string); /* this models the flipping a switch */
+
+    }
+
+    initial switch("1","off"),switch("2","off"), light("1","off"),light("2","off");
+    initial transition("off", "on");
+
+
+
+   initial !init();
+      
+      rule +!init() {
+          list L = [ "1", "1", "2", "1" ];
+          
+          int i = 0;
+          while (i < prelude.size(L)) {
+              !flip(prelude.valueAsString(L, i));
+              i = i + 1;
+          }
+      }
+
+
+    
+
+    
+    rule +!flip(string A) : transition(string S, string T) {
+         console.println("Switch " + A + "flip" + T + " switch "); 
+        -switch(A,S); 
+        +switch(A,T); 
+    }
+
+
+    rule +switch(string A, string S) { 
+        console.println("2. Set Goal light  "+ A + " to state " + S + " "); 
+        !light(A, S); 
+    }
+
+
+    rule +!light(string A, string S) : light(A,S)  {
+        console.println("Light " + A + " already correct in state '" + S + "' matching switch, do nothing ");          
+    }
+
+
+    rule +!light(string A,string S) :  ~light(A,S) & transition(string T, S) {
+    
+        console.println("Light "+ A +" in wrong state " + T + " fix the light by changing to " + S ); 
+
+        -light(A,T);
+        +light(A,S);
+        console.println("call "+ A +" light to change to "+ S +"  again... ");
+        system.sleep(2000);
+
+        !light(A, S);
+   
+    }
+
+    rule +light(string L, string L2) {
+        console.println("Light: " + L + " is in state: " + L2 );  
+    }
+
+    rule +flip(string A) {
+        console.println("Switch: " + A + " flipped: "  );
+        d.dumpBeliefs();  
+    }
+
+}
