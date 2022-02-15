@@ -1,80 +1,108 @@
+/* V1 Working */
+
 agent Main {
     module Console console;
+    module Prelude P;
     module System system;
     module Debug d;
 
     types lightOntology {
-        formula switch(string, string); /* this models the state of the switch  eg sw1, on */
-        formula light(string, string); /* this models the state of the light number eg l1, off */
+
+        formula light(string, string); /* this models the state of the light number eg l1, switch off */
         formula transition(string, string); /* this models a state transition */
-
+        formula transotherlite(string, string); /* this models a state transition */
+        formula lightTransitions(list);
     }
-
-    initial switch("1","off"),switch("2","off"), light("1","off"),light("2","off");
     initial transition("off", "on");
-   
-    rule +!main(list args) {
+    initial transition("on", "off");
+    /* States of L1 and l2, used in the disco */
+    initial lightTransitions([
+        ["off", "off"],["on", "off"],["off", "on"],["on", "on"]
+    ]);
 
-        console.println("1 Start main loop After 2 seconds, switch s1 should be turned on...");
-        
-        system.sleep(2000);
+    initial !discoLights();
 
-        !flip1();
-        !flip2();
-        !flip1();
-        !flip2();
-        !flip1();
-        !flip2();
-        !flip2();
-        !flip1();
-        system.sleep(2000);
-        system.exit();
-       
-        console.println("...");
+    rule +!discoSequence ([]) {
+        /*console.println("I run when the light transtions new item is empty, ATM I sleep and then go back and run the next step in rule discolights"  );*/
+        system.sleep(1000); 
+        !light("l2", "on");
+        !light("l1", "on");
+        system.sleep(1000);  
         
+        !light("l2", "on");
+        !light("l1", "on");
+        system.sleep(1000);  
+     
+        !light("l2", "on");
+        !light("l1", "on");
+        system.sleep(1000); 
+        console.println("..............................whole behaviour repeated"  );
+        !discoLights();
+
     }
 
-    rule +!flip1() : switch("1",string S) & transition(S, string T) {
-         console.println("4a Goal Switch " + T + " switch 1"); 
-        -switch("1",S); 
-        +switch("1",T); 
+    rule +!discoSequence([list H | list T]) {
+      /*console.println("discoSequence set goal L1 to " + P.valueAsString(H, 0) + " ."  );
+        console.println("discoSequence set goal L2 to " + P.valueAsString(H, 1) + " ."  );*/
+        !light("l1", P.valueAsString(H, 0));
+        !light("l2", P.valueAsString(H, 1));
+        system.sleep(2000);
+        /* call recursively */
+        !discoSequence(T);
     }
 
-    rule +!flip2() : switch("2",string S) & transition(S, string T) {
-         console.println("4b Switch " + T + " switch 2"); 
-        -switch("2",S); 
-        +switch("2",T); 
-    } 
+    rule +!discoLights() : lightTransitions (list T)  {
+        /* run main sequence */
+        !discoSequence(T);
 
-    rule +switch(string A, string S) { 
-        console.println("2. Set Goal light  "+ A + " to state " + S + " "); 
-        !light(A, S); 
+
+    }
+
+
+    /*Has the light change brought us into the party trigger?*/
+    rule +!light(string A,string S) : light(A,S) & light("l1", "on") & light("l2", "on") {
+        /* d.dumpBeliefs(); */
+
+        console.println("----PARTY-----");
+        system.sleep(1000); 
+        -+light("l2", "off"); 
+        -+light("l1", "on");
+        console.println("----PARTY-----");
+        system.sleep(1000); 
+        -+light("l1", "off");
+        -+light("l2", "on");
+        console.println("----PARTY-----");
+        system.sleep(1000); 
+        -+light("l2", "on");
+        /* this is a black tie party, appearances matter */
+        console.println("Light: l2 is in state: on");
+        -+light("l1", "on");
+        console.println("----PARTY-----");
+        system.sleep(1000); 
+        -+light("l2", "off");
+        -+light("l1", "off");
+        console.println("----PARTY-----");
+        
     }
 
     rule +!light(string A, string S) : light(A,S)  {
-        console.println("Light " + A + " already correct in state '" + S + "' matching switch, do nothing ");          
+       /* console.println("Light " + A + " already correct in state '" + S + "' matching switch, do nothing ");       
+        system.sleep(500);   */
     }
 
 
     rule +!light(string A,string S) :  ~light(A,S) & transition(string T, S) {
-        d.dumpBeliefs();
-        console.println("Light "+ A +" in wrong state " + T + " fix the light by changing it to " + S ); 
-    
-        
-        -light(A,T); //Correct the undesirable environment
-        +light(A,S); //Correct the undesirable environment
-        console.println("call "+ A +" light to change to "+ S +"  again... ");
-        system.sleep(2000);
-        d.dumpBeliefs(); //Do I need to call another goal here, so I can trigger a partyshould moving this light to on
-        !light(A, S); //Correct the undesirable environment
-        d.dumpBeliefs();
+        /* d.dumpBeliefs(); */
+      /*  console.println("Light "+ A +" in wrong state " + T + " fix the light by changing to " + S ); */
 
+        -light(A,T);
+        +light(A,S);
+        !light(A, S);
+   
     }
 
     rule +light(string L, string L2) {
         console.println("Light: " + L + " is in state: " + L2 );  
     }
-
-
 
 }
